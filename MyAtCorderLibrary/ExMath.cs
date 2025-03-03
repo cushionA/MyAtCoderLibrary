@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MyAtCorderLibrary
+namespace MyAtCoderLibrary
 {
     /// <summary>
     /// 計算用クラス。

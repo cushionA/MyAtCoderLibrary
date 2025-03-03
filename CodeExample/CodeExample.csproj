@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MyAtCorderLibrary\MyAtCorderLibrary.csproj" />
+    <ProjectReference Include="..\MyAtCorderLibrary\MyAtCoderLibrary.csproj" />
   </ItemGroup>
 
 </Project>

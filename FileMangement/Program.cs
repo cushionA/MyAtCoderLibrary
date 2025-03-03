@@ -154,7 +154,10 @@ namespace FileClassifier
                 // 設定ウィンドウを開く処理を仕込む。
                 ContextMenu = new ContextMenu(new[]
                 {
-                    new MenuItem("設定", ShowSettings)
+                    // 設定
+                    new MenuItem("設定", ShowSettings),
+                    // アプリ終了
+                    new MenuItem("アプリ終了",(s, e) => Application.Exit())
                 })
             };
         }
@@ -244,16 +247,16 @@ namespace FileClassifier
         /// <param name="e"></param>
         private static void OnApplicationExit(object sender, EventArgs e)
         {
+
             notifyIcon.Visible = false;
             notifyIcon.Dispose();
 
             // 全監視オブジェクトを破棄
             ClassifyManager.watchController.Dispose();
+
+            // 全部やめる
+            Environment.Exit(0);
         }
     }
-
-
-
-
 
 }

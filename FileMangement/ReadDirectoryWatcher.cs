@@ -237,15 +237,22 @@ namespace FileClassifier
         /// 監視処理を停止してインスタンスを破棄する。
         /// スレッドを追加していればそちらも閉じる
         /// </summary>
-        public override void Dispose()
+        public async override void Dispose()
         {
             // キャンセルトークンを発動させて処理を止める。
             cancellationTokenSource.Cancel();
 
+            await Task.Delay(100); // 擬似的な処理
+
             //　監視先パスがあるならファイルの読み込みをやめる。
             if ( watchDirectory != IntPtr.Zero )
             {
-                CloseHandle(watchDirectory);
+                if ( !CloseHandle(watchDirectory) )
+                {
+                    int error = Marshal.GetLastWin32Error();
+                    // エラーログを出力するか、適切なエラーハンドリングを行う
+                    Console.WriteLine($"CloseHandle failed with error code: {error}");
+                }
                 watchDirectory = IntPtr.Zero;
             }
         }
@@ -280,6 +287,7 @@ namespace FileClassifier
                     IntPtr.Zero,
                     IntPtr.Zero);
 
+
                 // 処理が成功した場合は監視結果を読み取り。
                 // ここでの成功とは変更が確認できたことではなく、監視処理がつつがなく、エラーなく終わったということ。
                 if ( success )
@@ -297,6 +305,7 @@ namespace FileClassifier
                     // 結果情報を全て読み終えるまでループ
                     while ( offset < bytesReturned )
                     {
+
                         // 監視結果情報を取得
                         var notifyInfo = (FILE_NOTIFY_INFORMATION)Marshal.PtrToStructure(ptr, typeof(FILE_NOTIFY_INFORMATION));
 

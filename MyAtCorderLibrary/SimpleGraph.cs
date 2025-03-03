@@ -1,5 +1,5 @@
 ﻿
-namespace MyAtCorderLibrary.Graph
+namespace MyAtCoderLibrary.Graph
 {
 
     /// <summary>

@@ -1,5 +1,5 @@
 ﻿using Kzrnm.Competitive.IO;
-using MyAtCorderLibrary.Graph;
+using MyAtCoderLibrary.Graph;
 using System.Buffers.Text;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
