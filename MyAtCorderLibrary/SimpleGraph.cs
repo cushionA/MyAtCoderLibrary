@@ -1,4 +1,6 @@
 ﻿
+using System.Runtime.InteropServices;
+
 namespace MyAtCoderLibrary.Graph
 {
 
@@ -6,7 +8,8 @@ namespace MyAtCoderLibrary.Graph
     /// 有向、無向の頂点と辺を結んだグラフを作成するクラス。<br/>
     /// 最大フローなどの問題ではなく、単純に頂点ごとに辺の情報を保存したり、最長パスを求めたりするのに使用する。<br/>
     /// 制約として、辺の出発点と行先が重複する辺の追加、既存の辺の編集はできない。<br/>
-    /// ジェネリック <typeparamref name="T"/> は辺の長さを格納するデータ型。辺の長さが1だけだと保証されてるならIntとかでいい。
+    /// ジェネリック <typeparamref name="T"/> は辺の長さを格納するデータ型。辺の長さが1だけだと保証されてるならIntとかでいい。<br/>
+    /// 頂点を指定・返す際は1からnまでの範囲。
     /// <remarks>
     /// 機能は以下の通りで、Publicメソッドを使用してアクセスできる。
     /// <list type="bullet">
@@ -24,32 +27,32 @@ namespace MyAtCoderLibrary.Graph
         /// このフラグが真であれば無向グラフになる。<br/>
         /// 辺を追加する際に双方向になる。
         /// </summary>
-        private readonly bool isUnDirected;
+        protected readonly bool isUnDirected;
 
         /// <summary>
         /// グラフの頂点数。
         /// </summary>
-        private readonly int vertexCount;
+        protected readonly int vertexCount;
 
         /// <summary>
         /// 要素数が頂点数の配列。<br/>
         /// 各要素は頂点に対応していて、頂点が持つ要素のディクショナリは各頂点が持つ辺のそれぞれの行先の頂点番号を保持している。<br/>
         /// intは行先の頂点で、floatは辺の長さ
         /// </summary>
-        private readonly List<(int, T)>[] vertexEdges;
+        protected readonly List<(int, T)>[] vertexEdges;
 
         /// <summary>
         /// 要素数が頂点数の配列。<br/>
         /// 各要素は頂点に対応していて、頂点が持つ要素は各頂点が持つ辺のそれぞれの行先の頂点番号を保持している。<br/>
         /// 辺の検索用のHashSet
         /// </summary>
-        private readonly HashSet<int>[] edgesHash;
+        protected readonly HashSet<int>[] edgesHash;
 
         /// <summary>
         /// グラフの辺が均一な長さかどうか。<br/>
         /// このフラグが真で、なおかつ無向グラフかどうかで最短パスの求め方にダイクストラと幅優先が使い分けられる。
         /// </summary>
-        private bool isUniformRange = true;
+        protected bool isUniformRange = true;
 
         /// <summary>
         /// グラフの基本情報を設定するコンストラクタ。
@@ -70,11 +73,15 @@ namespace MyAtCoderLibrary.Graph
         /// グラフに辺を追加するメソッド。<br/>
         /// すべての辺が同じ長さの場合、このメソッドを使用してはならない。
         /// </summary>
-        /// <param name="from">辺が伸びる元の頂点</param>
-        /// <param name="to">辺が伸びる先の頂点。</param>
+        /// <param name="from">辺が伸びる元の頂点。1から始まる数値で指定。</param>
+        /// <param name="to">辺が伸びる先の頂点。1から始まる数値で指定。</param>
         /// <param name="length">辺の長さ。</param>
         public void AddEdge(int from, int to, T length)
         {
+            // 1から始まる頂点指定を0始点に変換。
+            from--;
+            to--;
+
             if ( edgesHash[from] == null )
             {
                 edgesHash[from] = new HashSet<int>();
@@ -115,11 +122,15 @@ namespace MyAtCoderLibrary.Graph
         /// 辺の長さが均一なら絶対にこれを使用する。
         /// すべての辺の長さが3とかなら最後に取得したパスの長さを三倍してくれ。
         /// </summary>
-        /// <param name="from">辺が伸びる元の頂点</param>
-        /// <param name="to">辺が伸びる先の頂点。</param>
+        /// <param name="from">辺が伸びる元の頂点。1から始まる数値で指定。</param>
+        /// <param name="to">辺が伸びる先の頂点。1から始まる数値で指定。</param>
         /// <param name="length">辺の長さ。</param>
         public void AddEdge(int from, int to)
         {
+            // 1から始まる頂点指定を0始点に変換。
+            from--;
+            to--;
+
             if ( edgesHash[from] == null )
             {
                 edgesHash[from] = new HashSet<int>();
@@ -157,11 +168,15 @@ namespace MyAtCoderLibrary.Graph
         /// ある頂点からある頂点へ向かう辺を含んでいるかどうか、含んでいるとしたら長さはどれくらいかを返すメソッド。<br/>
         /// 長さゼロの辺なんてないからその辺が存在してないなら0を返す。
         /// </summary>
-        /// <param name="from">辺が伸びる元の頂点</param>
-        /// <param name="to">辺が伸びる先の頂点。</param>
+        /// <param name="from">辺が伸びる元の頂点。1から始まる数値で指定。</param>
+        /// <param name="to">辺が伸びる先の頂点。1から始まる数値で指定。</param>
         /// <returns>返り値が正の数なら辺を含んでいて、なおかつ長さを示している。0なら含んでない</returns>
         public T IsContainEdge(int from, int to)
         {
+            // 1から始まる頂点指定を0始点に変換。
+            from--;
+            to--;
+
             if ( edgesHash[from].Contains(to) )
             {
                 return vertexEdges[from][to].Item2;
@@ -192,11 +207,15 @@ namespace MyAtCoderLibrary.Graph
         /// <summary>
         /// 現在のグラフの二頂点間を結ぶ最小パスの長さを返すメソッド。
         /// </summary>
-        /// <param name="s">スタート地点</param>
-        /// <param name="t">ゴール地点</param>
+        /// <param name="s">スタート地点。1から始まる数値で指定。</param>
+        /// <param name="t">ゴール地点。1から始まる数値で指定。</param>
         /// <returns>二点間の最短距離。パスが存在しない場合はTの最小値を返す。</returns>
         public T GetMinPath(int s, int t)
         {
+            // 1から始まる頂点指定を0始点に変換。
+            s--;
+            t--;
+
             // スタート地点とゴール地点が同じなのはダメ。
             if ( s == t )
             {
@@ -220,10 +239,13 @@ namespace MyAtCoderLibrary.Graph
         /// <summary>
         /// 現在のグラフのある頂点から他の全頂点に対する最短距離を返すメソッド。
         /// </summary>
-        /// <param name="s">スタート地点</param>
+        /// <param name="s">スタート地点。1から始まる数値で指定。</param>
         /// <returns>スタート地点から全頂点への距離を格納するスパン</returns>
         public Span<T> GetMinPathToAllVertex(int s)
         {
+            // 1から始まる頂点指定を0始点に変換。
+            s--;
+
             // 無向グラフで、なおかつすべての辺の長さが等しいなら幅優先探索をして求める。
             if ( isUniformRange && isUnDirected )
             {
@@ -236,6 +258,55 @@ namespace MyAtCoderLibrary.Graph
             {
                 return DkStr(s);
             }
+        }
+
+        /// <summary>
+        /// 現在のグラフの二頂点間を結ぶ全パターンのパスの中で、任意の条件を最も満たす物の長さ（重み）を返す。<br/>
+        /// DFS（深さ優先探索）を使う。計算量が多いため頂点数が二桁でもない限り使わない。
+        /// </summary>
+        /// <param name="s">スタート地点。1から始まる数値で指定。</param>
+        /// <param name="t">ゴール地点。1から始まる数値で指定。</param>
+        /// <param name="init">初期値、Int.MinValue等に相当する、条件判断で更新される前の値</param>
+        /// <param name="judgeFunc">判断用の関数。引数1は現在の一番条件に近い値、引数2は入れ替え対象か調べる値、返り値は結果</param>
+        /// <param name="op">重み同士をどのような演算子で結合するかの指定（デフォは+）</param>
+        /// <returns>計算結果と、そのパスをSpanにした物を返す。</returns>
+        public (T, int[]) SearchPathByFunc(int s, int t, T init, Func<T, T, bool> judgeFunc, OPERATOR op = OPERATOR.加算)
+        {
+            // 全パスを取得する。
+            Span<int[]> paths = FindPaths(s, t, new bool[vertexCount], new Stack<int>(), new List<int[]>());
+
+            // 重み計算用のFuncを取得。
+            Func<T, T, T> calc = (Func<T, T, T>)ExMath.GetCalculator<T>(op);
+
+            // 答えとなる重みの総量
+            T ans = init;
+
+            // 答えのパスのIndex
+            int index = 0;
+
+            // ここから辺の重みを取得して計算していくよ
+            // 一つずつパスを確認する。
+            for ( int i = 0; i < paths.Length; i++ )
+            {
+                int[] path = paths[i];
+                T result = vertexEdges[0][path[1]].Item2;
+
+                for ( int j = 1; j < path.Length - 1; j++ )
+                {
+                    result = calc(result, vertexEdges[path[j]][path[j + 1]].Item2);
+                }
+
+                // もし現在の結果と今の結果を比較して入れ替わりが起こるなら入れ替える。
+                if ( judgeFunc(ans, result) )
+                {
+                    ans = result;
+                    index = i;
+                }
+            }
+
+            // 答えを返す。
+            return (ans, paths[index]);
+
         }
 
 
@@ -568,6 +639,58 @@ namespace MyAtCoderLibrary.Graph
         }
 
         #endregion 最小パス
+
+        #region 全パス列挙
+
+        /// <summary>
+        /// そのグラフに存在するある地点から<paramref name="target"/>までのパスを全列挙する。<br/>
+        /// </summary>
+        /// <param name="current">現在の地点。スタート地点であり、どこまで探索したかという値でもある。</param>
+        /// <param name="target">目的地。</param>
+        /// <param name="visited"></param>
+        /// <param name="path"></param>
+        /// <param name="paths"></param>
+        /// <param name="isFirst">再帰呼び出しではない、最初の呼び出しであるかということ。</param>
+        /// <returns></returns>
+        private Span<int[]> FindPaths(int current, int target, bool[] visited, Stack<int> path, List<int[]> paths, bool isFirst = true)
+        {
+            visited[current] = true;
+            path.Push(current);
+
+            if ( current == target )
+            {
+                // 現在のパスを結果に追加
+                paths.Add(path.ToArray());
+            }
+            else
+            {
+                // キューから次に訪問する頂点を取り出して、その頂点から出ている辺のリストを作成する。
+                Span<(int, T)> edgeSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan<(int, T)>(vertexEdges[current]);
+
+                for ( int i = 0; i < edgeSpan.Length; i++ )
+                {
+                    if ( !visited[edgeSpan[i].Item1] )
+                    {
+                        FindPaths(edgeSpan[i].Item1, target, visited, path, paths, false);
+                    }
+                }
+            }
+
+            // 再帰呼び出しでなければ返す。
+            if ( isFirst )
+            {
+                return CollectionsMarshal.AsSpan(paths);
+            }
+            else
+            {
+                // バックトラック
+                path.Pop();
+                visited[current] = false;
+                return null;
+            }
+        }
+
+        #endregion 全パス列挙
 
         #endregion privateメソッド
 
