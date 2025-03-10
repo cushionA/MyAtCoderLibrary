@@ -1,4 +1,5 @@
 ﻿
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace MyAtCoderLibrary.Graph
@@ -37,7 +38,7 @@ namespace MyAtCoderLibrary.Graph
         /// <summary>
         /// 要素数が頂点数の配列。<br/>
         /// 各要素は頂点に対応していて、頂点が持つ要素のディクショナリは各頂点が持つ辺のそれぞれの行先の頂点番号を保持している。<br/>
-        /// intは行先の頂点で、floatは辺の長さ
+        /// intは行先の頂点で、Tは辺の長さ
         /// </summary>
         protected readonly List<(int, T)>[] vertexEdges;
 
@@ -272,6 +273,10 @@ namespace MyAtCoderLibrary.Graph
         /// <returns>計算結果と、そのパスをSpanにした物を返す。</returns>
         public (T, int[]) SearchPathByFunc(int s, int t, T init, Func<T, T, bool> judgeFunc, OPERATOR op = OPERATOR.加算)
         {
+            // 1から始まる頂点指定を0始点に変換。
+            s--;
+            t--;
+
             // 全パスを取得する。
             Span<int[]> paths = FindPaths(s, t, new bool[vertexCount], new Stack<int>(), new List<int[]>());
 
@@ -289,11 +294,13 @@ namespace MyAtCoderLibrary.Graph
             for ( int i = 0; i < paths.Length; i++ )
             {
                 int[] path = paths[i];
-                T result = vertexEdges[0][path[1]].Item2;
+
+                // 最初の重みはそのまま処理して、二回目以降は任意の演算子を使う。
+                T result = GetEdgeWeight(path[0], path[1]);
 
                 for ( int j = 1; j < path.Length - 1; j++ )
                 {
-                    result = calc(result, vertexEdges[path[j]][path[j + 1]].Item2);
+                    result = calc(result, GetEdgeWeight(path[j], path[j + 1]));
                 }
 
                 // もし現在の結果と今の結果を比較して入れ替わりが起こるなら入れ替える。
@@ -688,6 +695,28 @@ namespace MyAtCoderLibrary.Graph
                 visited[current] = false;
                 return null;
             }
+        }
+
+
+        /// <summary>
+        /// vertexEdgesからある頂点から頂点へと向かう辺の重みを取り出すメソッド。
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <returns>頂点fromからtoへの辺の重み</returns>
+        [MethodImpl(256)]
+        private T GetEdgeWeight(int from, int to)
+        {
+            // その頂点から出ている辺のリストを探索する。
+            Span<(int, T)> edgeSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan<(int, T)>(vertexEdges[from]);
+            for ( int i = 0; i < edgeSpan.Length; i++ )
+            {
+                if ( edgeSpan[i].Item1 == to )
+                {
+                    return edgeSpan[i].Item2;
+                }
+            }
+            return T.MinValue;
         }
 
         #endregion 全パス列挙
