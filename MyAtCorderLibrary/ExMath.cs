@@ -752,5 +752,88 @@ namespace MyAtCoderLibrary
 
         #endregion Vector関連
 
+        #region 配列操作
+
+        /// <summary>
+        /// System.Numerics.Vectorを使用して配列の全要素に値を足す（int配列専用）
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void AddValueVector(int[] array, int value)
+        {
+            if ( array == null || array.Length == 0 )
+                return;
+
+            // Vector<int>で処理できる要素数
+            int vectorSize = Vector<int>.Count;
+
+            // 足す値をVectorに複製
+            Vector<int> valueVector = new Vector<int>(value);
+
+            int i = 0;
+
+            // ベクトル処理できる部分を処理
+            if ( array.Length >= vectorSize )
+            {
+                // 処理対象の終了インデックス（ベクトルサイズの倍数まで）
+                int vectorizedEnd = array.Length - (array.Length % vectorSize);
+
+                // ベクトル化処理
+                for ( ; i < vectorizedEnd; i += vectorSize )
+                {
+                    // 配列から現在位置のベクトルを取得
+                    Vector<int> vec = new Vector<int>(array, i);
+
+                    // 加算
+                    vec += valueVector;
+
+                    // 結果を配列に書き戻す
+                    vec.CopyTo(array, i);
+                }
+            }
+
+            // 残りの要素を通常処理
+            for ( ; i < array.Length; i++ )
+            {
+                array[i] += value;
+            }
+        }
+
+
+        /// <summary>
+        /// ジェネリック版の全要素加算（あらゆる数値型に対応）
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void AddValueVector<T>(T[] array, T value) where T : struct, INumber<T>
+        {
+            if ( array == null || array.Length == 0 )
+                return;
+
+            int vectorSize = Vector<T>.Count;
+            Vector<T> valueVector = new Vector<T>(value);
+
+            int i = 0;
+
+            // ベクトル処理
+            if ( array.Length >= vectorSize )
+            {
+                int vectorizedEnd = array.Length - (array.Length % vectorSize);
+
+                for ( ; i < vectorizedEnd; i += vectorSize )
+                {
+                    Vector<T> vec = new Vector<T>(array, i);
+                    vec += valueVector;
+                    vec.CopyTo(array, i);
+                }
+            }
+
+            // 残りの要素
+            for ( ; i < array.Length; i++ )
+            {
+                array[i] += value;
+            }
+        }
+
+        #endregion 配列操作
+
     }
 }

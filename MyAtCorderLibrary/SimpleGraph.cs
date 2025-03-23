@@ -1,4 +1,5 @@
 ﻿
+using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -56,6 +57,11 @@ namespace MyAtCoderLibrary.Graph
 		protected bool isUniformRange = true;
 
 		/// <summary>
+		/// 探索時に距離を格納するための配列。
+		/// </summary>
+		T[] distance;
+
+		/// <summary>
 		/// グラフの基本情報を設定するコンストラクタ。
 		/// </summary>
 		/// <param name="isUnDirected">無向グラフであるかどうか</param>
@@ -66,6 +72,7 @@ namespace MyAtCoderLibrary.Graph
 			this.vertexCount = vertexCount;
 			this.vertexEdges = new List<(int, T)>[vertexCount];
 			this.edgesHash = new HashSet<int>[vertexCount];
+			this.distance = new T[vertexCount];
 		}
 
 		#region publicメソッド
@@ -278,7 +285,7 @@ namespace MyAtCoderLibrary.Graph
 			t--;
 
 			// 全パスを取得する。
-			Span<int[]> paths = FindPaths(s, t, new bool[vertexCount], new Stack<int>(), new List<int[]>());
+			Span<int[]> paths = FindPaths(s, t, ArrayPool<bool>.Shared.Rent(vertexCount), new Stack<int>(), new List<int[]>());
 
 			// 重み計算用のFuncを取得。
 			Func<T, T, T> calc = (Func<T, T, T>)ExMath.GetCalculator<T>(op);
@@ -391,13 +398,11 @@ namespace MyAtCoderLibrary.Graph
 			// 幅優先探索に使うキュー。
 			Queue<int> queue = new Queue<int>();
 
+			// BFSは各頂点を一度しか訪問しないので、訪問済みの頂点番号はHashSetに入れて照会する。
+			bool[] visited = ArrayPool<bool>.Shared.Rent(vertexCount);
+
 			// スタート地点から各頂点への距離を示す。
 			// インデックスが頂点を表して、各要素の値がスタート地点からの距離。
-			T[] distance = new T[vertexCount];
-
-			// BFSは各頂点を一度しか訪問しないので、訪問済みの頂点番号はHashSetに入れて照会する。
-			bool[] visited = new bool[vertexCount];
-
 			// 初期処理として配列を最大値で満たす。
 			distance.AsSpan().Fill(T.MaxValue);
 
@@ -423,6 +428,9 @@ namespace MyAtCoderLibrary.Graph
 					// もし終了位置に来ていたなら値を返して終わり。
 					if ( toVertex == t )
 					{
+						// poolに配列を返す。
+						ArrayPool<bool>.Shared.Return(visited, true);
+
 						// 行先の頂点の距離を返す。
 						return distance[currentVertex] + T.One;
 					}
@@ -446,6 +454,9 @@ namespace MyAtCoderLibrary.Graph
 				}
 			}
 
+			// 配列を返す。
+			ArrayPool<bool>.Shared.Return(visited, true);
+
 			// 到達できなかったら最小値を返す。
 			return T.MinValue;
 
@@ -463,13 +474,11 @@ namespace MyAtCoderLibrary.Graph
 			// ダイクストラ法に使う優先付きキュー。
 			PriorityQueue<int, T> prQueue = new();
 
+			// BFSは各頂点を一度しか訪問しないので、訪問済みの頂点番号はHashSetに入れて照会する。
+			bool[] visited = ArrayPool<bool>.Shared.Rent(vertexCount);
+
 			// スタート地点から各頂点への距離を示す。
 			// インデックスが頂点を表して、各要素の値がスタート地点からの距離。
-			T[] distance = new T[vertexCount];
-
-			// BFSは各頂点を一度しか訪問しないので、訪問済みの頂点番号はHashSetに入れて照会する。
-			bool[] visited = new bool[vertexCount];
-
 			// 初期処理として配列を最大値で満たす。
 			distance.AsSpan().Fill(T.MaxValue);
 
@@ -484,6 +493,9 @@ namespace MyAtCoderLibrary.Graph
 				// もし終了位置に来ていたなら値を返して終わり。
 				if ( currentVertex == t )
 				{
+					// poolに配列を返す。
+					ArrayPool<bool>.Shared.Return(visited, true);
+
 					// 現在の頂点までの距離を返す。
 					return edgeDistance;
 				}
@@ -513,6 +525,9 @@ namespace MyAtCoderLibrary.Graph
 				}
 			}
 
+			// poolに配列を返す。
+			ArrayPool<bool>.Shared.Return(visited, true);
+
 			// 到達できなかったら最小値を返す。
 			return T.MinValue;
 
@@ -531,13 +546,11 @@ namespace MyAtCoderLibrary.Graph
 			// 幅優先探索に使うキュー。
 			Queue<int> queue = new Queue<int>();
 
+			// BFSは各頂点を一度しか訪問しないので、訪問済みの頂点番号はHashSetに入れて照会する。
+			bool[] visited = ArrayPool<bool>.Shared.Rent(vertexCount);
+
 			// スタート地点から各頂点への距離を示す。
 			// インデックスが頂点を表して、各要素の値がスタート地点からの距離。
-			T[] distance = new T[vertexCount];
-
-			// BFSは各頂点を一度しか訪問しないので、訪問済みの頂点番号はHashSetに入れて照会する。
-			bool[] visited = new bool[vertexCount];
-
 			// 初期処理として配列を最大値で満たす。
 			distance.AsSpan().Fill(T.MaxValue);
 
@@ -569,8 +582,6 @@ namespace MyAtCoderLibrary.Graph
 					// 訪問済みにする。
 					visited[toVertex] = true;
 
-
-
 					// 行先の頂点は一個プラスした距離になる。
 					distance[toVertex] = distance[currentVertex] + T.One;
 
@@ -578,6 +589,9 @@ namespace MyAtCoderLibrary.Graph
 					queue.Enqueue(toVertex);
 				}
 			}
+
+			// poolに配列を返す。
+			ArrayPool<bool>.Shared.Return(visited, true);
 
 			// 距離配列を返す。
 			return distance;
@@ -597,13 +611,11 @@ namespace MyAtCoderLibrary.Graph
 			// ダイクストラ法に使う優先付きキュー。
 			PriorityQueue<int, T> prQueue = new();
 
+			// BFSは各頂点を一度しか訪問しないので、訪問済みの頂点番号はHashSetに入れて照会する。
+			bool[] visited = ArrayPool<bool>.Shared.Rent(vertexCount);
+
 			// スタート地点から各頂点への距離を示す。
 			// インデックスが頂点を表して、各要素の値がスタート地点からの距離。
-			T[] distance = new T[vertexCount];
-
-			// BFSは各頂点を一度しか訪問しないので、訪問済みの頂点番号はHashSetに入れて照会する。
-			bool[] visited = new bool[vertexCount];
-
 			// 初期処理として配列を最大値で満たす。
 			distance.AsSpan().Fill(T.MaxValue);
 
@@ -639,6 +651,9 @@ namespace MyAtCoderLibrary.Graph
 					prQueue.Enqueue(toVertex, edgeDistance + edgeSpan[i].Item2);
 				}
 			}
+
+			// poolに配列を返す。
+			ArrayPool<bool>.Shared.Return(visited, true);
 
 			// 距離配列を返す。
 			return distance;
@@ -686,6 +701,7 @@ namespace MyAtCoderLibrary.Graph
 			// 再帰呼び出しでなければ返す。
 			if ( isFirst )
 			{
+				ArrayPool<bool>.Shared.Return(visited, true);
 				return CollectionsMarshal.AsSpan(paths);
 			}
 			else
