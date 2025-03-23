@@ -10,6 +10,7 @@ namespace MyAtCoderLibrary.Graph
     /// シンプルなグリッド。<br/>
     /// 列数と行数と文字配列の配列を受け取ってグリッドを作成し、いくつかの操作を行う
     /// あるマスとあるマスへの最短経路（障害物アリ）とか塗りつぶしとか
+    /// 区間和もありだな
     /// </summary>
     public class SimpleGrid
     {
