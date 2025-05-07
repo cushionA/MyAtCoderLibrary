@@ -248,7 +248,6 @@ namespace MyAtCoderLibrary
         public int[] GetPath(int a)
         {
             int parent = GetRoot(a);
-            a--;
 
             // 配列を作る。
             List<int> path = new List<int>();
@@ -395,36 +394,37 @@ namespace MyAtCoderLibrary
         /// </summary>
         /// <param name="a">頂点aを含むパスの閉路を返す。</param>
         /// <returns>閉路があれば返す。存在しなければ何も返さない。</returns>
-        public int[] GetCycle(int a)
+        public Span<int> GetCycle(int a)
         {
             // まずは親を取得。
             int parent = GetRoot(a);
-            a--;
 
             // 配列を作る。
             int pathLength = front[parent] * -1;
-            int[] path = new int[pathLength];
+
 
             HashSet<int> checker = new HashSet<int>();
 
             // サイクルが閉じる箇所と、引き起こす番号を記録。
             int cyclePoint = -1;
             int cycleNum = 0;
+            int i = 0;
 
-            for ( int i = 0; i < path.Length; i++ )
+            int nowVertex = parent;
+
+            while ( back[nowVertex] != -1 )
             {
-                // 1から始まるインデックスに対応
-                path[i] = parent + 1;
-                parent = back[parent];
+                nowVertex = back[nowVertex];
 
                 // 同じ頂点を複数回通るならサイクルを含んでるよ。
-                if ( checker.Contains(path[i]) )
+                if ( checker.Contains(nowVertex) )
                 {
                     cyclePoint = i;
-                    cycleNum = path[i];
+                    cycleNum = nowVertex;
                     break;
                 }
-                checker.Add(path[i]);
+                checker.Add(parent);
+                i++;
             }
 
             // 破棄
@@ -436,22 +436,36 @@ namespace MyAtCoderLibrary
                 return null;
             }
 
-            int start = 0;
+            bool start = false;
 
-            for ( int i = 0; i < path.Length; i++ )
+            nowVertex = parent;
+            i = 0;
+
+            List<int> cyclePath = new List<int>();
+
+            while ( back[nowVertex] != -1 )
             {
-                if ( path[i] == cycleNum )
+                nowVertex = back[nowVertex];
+
+                if ( start )
                 {
-                    start = i;
-                    break;
+                    cyclePath.Add(nowVertex);
+                    if ( nowVertex == cycleNum )
+                    {
+                        break;
+                    }
                 }
+                else if ( nowVertex == cycleNum )
+                {
+                    cyclePath.Add(nowVertex);
+                    start = true;
+                }
+
+                i++;
             }
 
-            int[] ans = path.AsSpan().Slice(start, cycleNum - start).ToArray();
-            ArrayPool<int>.Shared.Return(path);
-
             // 閉路を返す。
-            return ans;
+            return CollectionsMarshal.AsSpan(cyclePath);
         }
 
 
@@ -480,6 +494,61 @@ namespace MyAtCoderLibrary
 
             // 文字列閉路を返す。
             return sCycle;
+        }
+
+        /// <summary>
+        /// 全てのパスの始点を返す。<br></br>
+        /// パス構造の取得がメインであるため文字列はサポートしない。
+        /// </summary>
+        /// <param name="isIgnoreSingle">要素数が一つの頂点は無視する。</param>
+        /// <returns>自分のパスを持つ頂点名。</returns>
+        public Span<int> GetAllParent(bool isIgnoreSingle)
+        {
+            // 親要素のリスト
+            List<int> parentList = new List<int>();
+
+            for ( int i = 0; i < front.Length; i++ )
+            {
+                // 親要素じゃないか、要素数が一つは無視するオプションに引っかかったらスキップ。
+                if ( front[i] != -1 && (isIgnoreSingle && back[i] == -1) )
+                {
+                    continue;
+                }
+
+                // 親を追加。iに一つ足して1から始まる頂点名。
+                parentList.Add(i + 1);
+            }
+
+            // 結果を返す。
+            return CollectionsMarshal.AsSpan(parentList);
+        }
+
+
+        /// <summary>
+        /// 全てのパスを返す。<br></br>
+        /// パス構造の取得がメインであるため文字列はサポートしない。
+        /// </summary>
+        /// <param name="isIgnoreSingle">要素数が一つの頂点は無視する。</param>
+        /// <returns>パスを列挙したスパン</returns>
+        public Span<int[]> GetAllPath(bool isIgnoreSingle)
+        {
+            // 親要素のリスト
+            List<int[]> parentList = new List<int[]>();
+
+            for ( int i = 0; i < front.Length; i++ )
+            {
+                // 親要素じゃないか、要素数が一つは無視するオプションに引っかかったらスキップ。
+                if ( front[i] != -1 && (isIgnoreSingle && back[i] == -1) )
+                {
+                    continue;
+                }
+
+                // 親を追加。iに一つ足して1から始まる頂点名。
+                parentList.Add(GetPath(i + 1));
+            }
+
+            // 結果を返す。
+            return CollectionsMarshal.AsSpan(parentList);
         }
 
         #endregion Public関数

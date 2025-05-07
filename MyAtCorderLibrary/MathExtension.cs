@@ -539,7 +539,7 @@ namespace MyAtCoderLibrary
     /// 計算用クラス。
     /// 難しい計算をメソッドに起こしておく。
     /// </summary>
-    public static class ExMath
+    public static class MathExtension
     {
 
         /// <summary>
@@ -577,13 +577,14 @@ namespace MyAtCoderLibrary
         }
 
         /// <summary>
-        /// <paramref name="a"/>と<paramref name="b"/>の最大公約数を返す。
+        /// <paramref name="a"/>と<paramref name="b"/>の最大公約数を返す。<br/>
+        /// ちなみに最小公倍数は最大公約数でa*bを割ればわかる。
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <returns></returns>
-        public static T Euclid<T>(T a, T b) where T : System.Numerics.INumber<T>, System.Numerics.IMinMaxValue<T>
+        public static T EuclidGcd<T>(T a, T b) where T : System.Numerics.INumber<T>, System.Numerics.IMinMaxValue<T>
         {
             // 大きい方をaに入れる。
             if ( b > a )
@@ -607,6 +608,20 @@ namespace MyAtCoderLibrary
 
             }
         }
+
+        /// <summary>
+        /// 等比数列の総和を求める。
+        /// 初項<paramref name="a"/>、等比<paramref name="r"/>、項数<paramref name="n"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="a"></param>
+        /// <param name="r"></param>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        //public static T GeometricSum<T>(T a, T r, T n) where T : System.Numerics.INumber<T>, System.Numerics.IMinMaxValue<T>
+        //{
+        //    return a * ((r.Pow(r, n) - T.One) / (r - T.One));
+        //}
 
         /// <summary>
         /// Tの型の計算用Funcを返すメソッド。<br/>
@@ -737,6 +752,19 @@ namespace MyAtCoderLibrary
         }
 
         /// <summary>
+        /// x^2+y^2の距離を割り出す。
+        /// </summary>
+        /// <param name="vec">対象のVector</param>
+        /// <returns>平方根してない距離</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static T Distance<T>(this MyVector2<T> vec, MyVector2<T> other) where T : System.Numerics.INumber<T>, System.Numerics.IMinMaxValue<T>
+        {
+            T x = (vec.x - other.x);
+            T y = (vec.y - other.y);
+            return x * x + y * y;
+        }
+
+        /// <summary>
         /// 絶対値を割り出す拡張メソッド。
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -758,7 +786,7 @@ namespace MyAtCoderLibrary
         /// System.Numerics.Vectorを使用して配列の全要素に値を足す（int配列専用）
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe void AddValueVector(int[] array, int value)
+        public static unsafe void AddValueVector(this int[] array, int value)
         {
             if ( array == null || array.Length == 0 )
                 return;
@@ -803,7 +831,7 @@ namespace MyAtCoderLibrary
         /// ジェネリック版の全要素加算（あらゆる数値型に対応）
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void AddValueVector<T>(T[] array, T value) where T : struct, INumber<T>
+        public static void AddValueVector<T>(this T[] array, T value) where T : struct, INumber<T>
         {
             if ( array == null || array.Length == 0 )
                 return;
@@ -830,6 +858,44 @@ namespace MyAtCoderLibrary
             for ( ; i < array.Length; i++ )
             {
                 array[i] += value;
+            }
+        }
+
+        /// <summary>
+        /// System.Numerics.Vectorを使用して配列の全要素の値を更新する（int配列専用）
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void UpdateValueVector(this int[] array, int value)
+        {
+            if ( array == null || array.Length == 0 )
+                return;
+
+            // Vector<int>で処理できる要素数
+            int vectorSize = Vector<int>.Count;
+
+            // 上書きする値をVectorに複製
+            Vector<int> valueVector = new Vector<int>(value);
+
+            int i = 0;
+
+            // ベクトル処理できる部分を処理
+            if ( array.Length >= vectorSize )
+            {
+                // 処理対象の終了インデックス（ベクトルサイズの倍数まで）
+                int vectorizedEnd = array.Length - (array.Length % vectorSize);
+
+                // ベクトル化処理
+                for ( ; i < vectorizedEnd; i += vectorSize )
+                {
+                    // 値を配列に上書きする
+                    valueVector.CopyTo(array, i);
+                }
+            }
+
+            // 残りの要素を通常処理
+            for ( ; i < array.Length; i++ )
+            {
+                array[i] = value;
             }
         }
 

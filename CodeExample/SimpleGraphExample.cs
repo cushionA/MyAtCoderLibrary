@@ -25,8 +25,8 @@ internal static class Program
 
         for ( int i = 0; i < m; i++ )
         {
-            int s = reader.Int() - 1;
-            int t = reader.Int() - 1;
+            int s = reader.Int();
+            int t = reader.Int();
             int d = reader.Int();
 
             graph.AddEdge(s, t, d);
