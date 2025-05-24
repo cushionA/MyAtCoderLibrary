@@ -23,34 +23,34 @@ namespace MyAtCoderLibrary
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static List<(T value, int count)> GroupByEquality<T>(Span<T> source)
-            where T : IEquatable<T>
+    where T : IEquatable<T>
         {
             var result = new List<(T, int)>();
 
-            for ( int i = 0; i < source.Length; i++ )
+            if ( source.Length == 0 )
+                return result;
+
+            int i = 0;
+            while ( i < source.Length )
             {
                 T currentValue = source[i];
                 int count = 1;
 
-                for ( int j = 0; j < source.Length; j++ )
+                // 同じ値が連続する間カウントを増やす
+                int j = i + 1;
+                while ( j < source.Length && currentValue.Equals(source[j]) )
                 {
-                    if ( currentValue.Equals(source[j]) )
-                    {
-                        count++;
-                    }
-
-                    // 違う値が出てきたらそこからまたカウントする。
-                    else
-                    {
-                        result.Add((currentValue, count));
-                        i = j;
-                        count = 1;
-                    }
+                    count++;
+                    j++;
                 }
+
+                // 結果を追加
                 result.Add((currentValue, count));
+
+                // 次の異なる値の位置から再開
+                i = j;
             }
 
-            // 圧縮結果を返す。
             return result;
         }
 
